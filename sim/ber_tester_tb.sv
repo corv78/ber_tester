@@ -24,28 +24,42 @@ module ber_tester_tb(
 
     );
     
-    parameter       WIDTH = 32;
+    parameter       WIDTH = 8;
 
     
     logic [WIDTH-1:0]    prbs;
     logic                clk;
     logic                reset;
+    logic                en;
+    logic [WIDTH:0]      err_num;
+    logic                lock;
     
     
     
-    prbs_wide_generate #(
-    .DATA_WIDTH(WIDTH)
-    ) prbs_120_generate (
+    prbs_wide_generate  prbs_7 (
       .clk      ( clk       ),
       .reset    ( reset     ),
-      .prbs     ( prbs )
+      .en       ( en        ),
+      .prbs     ( prbs      )
+    );
+
+    prbs_checker  prbs_checker_7 (
+      .clk      ( clk       ),
+      .reset    ( reset     ),
+      .en       ( 1'b1      ),
+      .prbs     ( prbs      ),
+      .lock     ( lock      ),
+      .err_num  ( err_num   )
     );
     
     
     initial
      begin
-     reset <= 1; #10;
-     reset <= 0; #10;
+     reset  <= 1; en <= 0; #10;
+     reset  <= 0; #10;
+     en     <= 1; #500
+     en     <= 0; #50
+     en     <= 1;
      end
         
     always
