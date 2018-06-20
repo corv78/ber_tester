@@ -36,17 +36,17 @@ module ber_tester_tb(
     
     
     
-    prbs_wide_generate  prbs_7 (
+    prbs_generate  prbs_31_generate (
       .clk      ( clk       ),
       .reset    ( reset     ),
       .en       ( en        ),
       .prbs     ( prbs      )
     );
 
-    prbs_checker  prbs_checker_7 (
+    prbs_checker  prbs_31_checker (
       .clk      ( clk       ),
       .reset    ( reset     ),
-      .en       ( 1'b1      ),
+      .en       ( en        ),
       .prbs     ( prbs      ),
       .lock     ( lock      ),
       .err_num  ( err_num   )

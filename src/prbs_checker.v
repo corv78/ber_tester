@@ -27,49 +27,56 @@ module prbs_checker(
     prbs, clk, en, reset
     );
     
-    parameter           WIDTH = 8,
-                        TAP1 = 6,
-                        TAP2 = 5;
-
-    output  [WIDTH-1:0] err_num;
+    output  [3:0]       err_num;
     output              lock;
   
-    input   [WIDTH-1:0] prbs;
+    input   [7:0]       prbs;
     input               clk, en, reset;
   
-    reg     [WIDTH:0]   err_num;
+    reg     [3:0]       err_num;
     reg                 lock;
-    reg     [WIDTH-1:0] prbs_state, check, d, prbs_lat;   
+    reg     [30:0]      d; 
+    reg     [7:0]       check, prbs_lat;   
     reg                 load; 
     integer             i;
     
     
+    
    always @ (posedge clk)
-      if (reset) begin
-        prbs_state <= 1; //anything but teh all 0s case is fine.
-        check <= 0;
-        d <= 0;
-        err_num <= 0;
-        i <= 0;
-        lock <= 0;
-        load <= 0;
-        prbs_lat <= 0;
+      if (reset) begin  // on reset
+        check       <= 0;
+        d           <= 31'b101_1001_0111_1001_0101_0111_1010_0000;
+        err_num     <= 0;
+        i           <= 0;
+        lock        <= 0;
+        load        <= 1;
+        prbs_lat    <= 0;
       end  
-      else 
+      else              // after reset
         if (en) begin
-           d = prbs_state; //blocking assignment used on purpose here
-           repeat (WIDTH) d = {d,d[TAP1]^d[TAP2]};//again blocking is intentional
+           prbs_lat = {  d[30]^d[27],
+                         d[29]^d[26],
+                         d[28]^d[25],
+                         d[27]^d[24],
+                         d[26]^d[23],
+                         d[25]^d[22],
+                         d[26]^d[21],
+                         d[23]^d[20]};
+                        
+           d[30:0] <= (load) ? {d[22:0],prbs}: {d[22:0], prbs_lat}; // shift or reload
 
-           prbs_state <= (load) ? prbs : d;
-
-           prbs_lat <= prbs;
-           check <= prbs_lat ^ prbs_state;
+           check <= prbs ^ prbs_lat; //compare
+           
            err_num = 0;
-           for (i=0;i<WIDTH;i=i+1)
-             err_num =  err_num + check[i];
+           for (i=0; i<7; i=i+1)
+             err_num =  err_num + check[i];  // bit error count
+             
            load <= err_num > 2; //error rate to reload
            lock <= !err_num;
         end // else: !if(reset)    
     
     
 endmodule
+
+
+

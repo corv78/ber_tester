@@ -21,7 +21,7 @@
 
 
 
- module prbs_wide_generate (
+ module prbs_generate (
        // Outputs
        prbs,
        // Inputs
@@ -29,29 +29,34 @@
        );
     
       parameter       WIDTH = 8,
-                      TAP1 = 6,
-                      TAP2 = 5;
+                      TAP1 = 30,
+                      TAP2 = 27;
     
-       output [WIDTH-1:0] prbs;
-       input               clk, en, reset;
+       output [7:0]    prbs;
+       input           clk, en, reset;
     
-       reg [WIDTH-1:0]      prbs;
-       reg [WIDTH-1:0]      d;//d is a temp variable
+       reg [7:0]       prbs;
+       reg [30:0]      d;//d is a temp variable
      
     
        always @ (posedge clk)
          if (reset) begin
-            prbs     <= 1; //seed, anything but the all 0s case is fine.
-            d        <= 0;
+            prbs     <= 0;
+            d        <= 31'b101_1001_0111_1001_0101_0111_1010_0000; //seed, anything but the all 0s case is fine.
          end
          else 
             if (en) begin
-                d = prbs; //blocking assignment used on purpose here
-                repeat (WIDTH) d = {d,d[TAP1]^d[TAP2]};//again blocking is intentional
-                prbs <= d;
+                d[30:0] <= {d[22:0],    d[30]^d[27],
+                                        d[29]^d[26],
+                                        d[28]^d[25],
+                                        d[27]^d[24],
+                                        d[26]^d[23],
+                                        d[25]^d[22],
+                                        d[26]^d[21],
+                                        d[23]^d[20]};  
+                prbs <= d[7:0];
             end // else: !if(reset)
     endmodule // prbs_wide_generate
- 
  
  
 
