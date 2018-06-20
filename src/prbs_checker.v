@@ -27,13 +27,13 @@ module prbs_checker(
     prbs, clk, en, reset
     );
     
-    output  [3:0]       err_num;
+    output  [8:0]       err_num;
     output              lock;
   
     input   [7:0]       prbs;
     input               clk, en, reset;
   
-    reg     [3:0]       err_num;
+    reg     [8:0]       err_num;
     reg                 lock;
     reg     [30:0]      d; 
     reg     [7:0]       check, prbs_lat;   
