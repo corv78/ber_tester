@@ -16,7 +16,7 @@
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
-// 
+// TODO: antisleeping
 //////////////////////////////////////////////////////////////////////////////////
 
 
@@ -27,6 +27,9 @@ module prbs_checker(
     prbs, clk, en, reset
     );
     
+    parameter       ERR_THRSHLD = 2,
+                    LOCK_CNT = 8;
+    
     output  [8:0]       err_num;
     output              lock;
   
@@ -34,27 +37,32 @@ module prbs_checker(
     input               clk, en, reset;
   
     reg     [8:0]       err_num;
-    reg                 lock;
+    wire                lock;
     reg     [30:0]      d; 
-    reg     [7:0]       check, prbs_lat;   
+    reg     [7:0]       prbs_lat, prbs_xor;   
+    reg     [7:0]       check;
     reg                 load; 
+    reg     [7:0]       lock_count;
     integer             i;
     
     
     
    always @ (posedge clk)
       if (reset) begin  // on reset
-        check       <= 0;
-        d           <= 31'b101_1001_0111_1001_0101_0111_1010_0000;
-        err_num     <= 0;
+        check       <= 8'hFF;
+        d           <= 1;//31'b101_1001_0111_1001_0101_0111_1010_0000;
+        err_num     <= 8'hFF;
         i           <= 0;
-        lock        <= 0;
         load        <= 1;
         prbs_lat    <= 0;
+        prbs_xor    <= 8'hFF;
+        lock_count  <= 0;
       end  
-      else              // after reset
+      else begin         // after reset
         if (en) begin
-           prbs_lat = {  d[30]^d[27],
+           prbs_lat <= prbs;    //relatch data on input
+           
+           prbs_xor = {  d[30]^d[27],
                          d[29]^d[26],
                          d[28]^d[25],
                          d[27]^d[24],
@@ -63,19 +71,31 @@ module prbs_checker(
                          d[26]^d[21],
                          d[23]^d[20]};
                         
-           d[30:0] <= (load) ? {d[22:0],prbs}: {d[22:0], prbs_lat}; // shift or reload
+           d[30:0] <= (load) ? {d[22:0],prbs_lat}: {d[22:0], prbs_xor}; // shift or reload
 
-           check <= prbs ^ prbs_lat; //compare
+
+           check <= prbs_lat ^ prbs_xor; //compare
            
            err_num = 0;
            for (i=0; i<7; i=i+1)
              err_num =  err_num + check[i];  // bit error count
              
-           load <= err_num > 2; //error rate to reload
-           lock <= !err_num;
-        end // else: !if(reset)    
+
+            if (err_num < ERR_THRSHLD) begin
+                if (lock_count  < LOCK_CNT)
+                    lock_count = lock_count + 1;
+                else
+                    load <= 1'b0;        
+            end    
+            else begin              // drop lock and load on first error > threshold
+                lock_count  <= 0;
+                load        <= 1'b1;        
+            end    
+             
+        end // else: !if(en)    
+    end // else: !if(reset)
     
-    
+    assign lock = ~load;
 endmodule
 
 

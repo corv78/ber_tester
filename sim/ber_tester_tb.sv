@@ -56,10 +56,11 @@ module ber_tester_tb(
     initial
      begin
      reset  <= 1; en <= 0; #10;
-     reset  <= 0; #10;
+     reset  <= 0; #20;
      en     <= 1; #500
      en     <= 0; #50
-     en     <= 1;
+     en     <= 1; #300
+     en     <= 0;
      end
         
     always
